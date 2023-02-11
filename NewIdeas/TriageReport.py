@@ -51,6 +51,14 @@
 #   v1.20 - Add Windows 11 Program Compatiblity Assistant Artifact    #
 #   v1.30 - Fundamental Changes to allow TriageReport to run at scale #
 #           Change Location of directories to be unique               #
+#         - Removing the requirement for AChoirX to be installed:     #
+#           REquires the following programs:                          #
+#           .\LoParser.exe - Log Parser                               #
+#           .\Dsk\MFTDump.exe - Parses the MFT                        #
+#           .\Sys\WinpPefetchView.exe  - Parses the Prefetch Files    #
+#           .\SYS\\RBCmd.exe - Parses the Recycle Bin                 #
+#           .\SYS\\LECmd.exe - Parses LNK Files                       #
+#           .\Chainsaw\chainsaw_x86_64-pc-windows-msvc.exe            #
 ####################################################################### 
 import os
 import sys
@@ -79,10 +87,10 @@ cfgname = str(args.cfgname)
 dirname = str(args.dirname)
 dirleft, diright = os.path.split(dirname)
 dirtrge = dirname + "\\TriageReport"
-htmname = diright + ".htm"
-ipsnameall = "AllIps.txt"
-domnameall = "AllDoms.txt"
-hshnameall = "AllHash.txt"
+htmname = dirtrge + "\\" + diright + ".htm"
+ipsnameall = dirtrge + "\\AllIps.txt"
+domnameall = dirtrge + "\\AllDoms.txt"
+hshnameall = dirtrge + "\\AllHash.txt"
 
 
 ###########################################################################
@@ -517,7 +525,7 @@ def main():
 
     if os.path.isdir(dirtrge + "\\ShellBags"):
         for curfile in os.listdir(dirtrge + "\\ShellBags"):
-            os.remove(dirtre + "\\ShellBags\\" + curfile)
+            os.remove(dirtrge + "\\ShellBags\\" + curfile)
 
     ChSwSubDir = ""
     for ChName in glob.glob(dirtrge + '\\**\account_tampering.csv', recursive=True):
@@ -658,16 +666,16 @@ def main():
                 curfile = os.path.join(root, fname)
 
                 if fnameUpper.startswith("NTUSER.") and fnameUpper.endswith(".DAT"):
-                    curouput = "shlasst." + str(reccount)
+                    curouput = dirtrge + "\\shlasst." + str(reccount)
 
                     astfile = open(curouput, "w", encoding='utf8', errors="replace")
                     astfile.write("<h2>User Registry: " + curfile + "</h2>\n")
                     astfile.close()
 
-                    cmdexec = dirleft + "\\RRV\\RegRipper3.0-master\\rip.exe -p shellfolders -r " + curfile + " >> " + dirtrge + "\\" + curouput
+                    cmdexec = dirleft + "\\RRV\\RegRipper3.0-master\\rip.exe -p shellfolders -r " + curfile + " >> " + curouput
                     returned_value = os.system(cmdexec)
 
-                    cmdexec = dirleft + "\\RRV\\RegRipper3.0-master\\rip.exe -p userassist -r " + curfile + " >> " + dirtrge + "\\" + curouput
+                    cmdexec = dirleft + "\\RRV\\RegRipper3.0-master\\rip.exe -p userassist -r " + curfile + " >> " + curouput
                     returned_value = os.system(cmdexec)
 
                     reccount = reccount + 1
@@ -727,16 +735,16 @@ def main():
             # Parse the Events                                                        #
             ###########################################################################
             print("[+] Parsing Security Event Logs...")
-            cmdexec = "LogParser.exe \"Select to_utctime(Timegenerated) AS Date, EXTRACT_TOKEN(Strings, 1, '|') as Machine, EXTRACT_TOKEN(Strings, 5, '|') as LoginID, EXTRACT_TOKEN(Strings, 6, '|') as LoginMachine, EXTRACT_TOKEN(Strings, 8, '|') as LogonType, EXTRACT_TOKEN(Strings, 18, '|') as RemoteIP from Security1.evtx where eventid=4624 AND LogonType='10'\" -i:evt -o:csv -q > RDPGood.csv"
+            cmdexec = "LogParser.exe \"Select to_utctime(Timegenerated) AS Date, EXTRACT_TOKEN(Strings, 1, '|') as Machine, EXTRACT_TOKEN(Strings, 5, '|') as LoginID, EXTRACT_TOKEN(Strings, 6, '|') as LoginMachine, EXTRACT_TOKEN(Strings, 8, '|') as LogonType, EXTRACT_TOKEN(Strings, 18, '|') as RemoteIP from " + dirtrge + "\\Security1.evtx where eventid=4624 AND LogonType='10'\" -i:evt -o:csv -q > " + dirtrge + "\\RDPGood.csv"
             returned_value = os.system(cmdexec)
 
-            cmdexec = "LogParser.exe \"Select to_utctime(Timegenerated) AS Date, EXTRACT_TOKEN(Strings, 5, '|') as LoginID from Security1.evtx where eventid=4625\" -i:evt -o:csv -q > SecEvt4625.csv"
+            cmdexec = "LogParser.exe \"Select to_utctime(Timegenerated) AS Date, EXTRACT_TOKEN(Strings, 5, '|') as LoginID from " + dirtrge + "\\Security1.evtx where eventid=4625\" -i:evt -o:csv -q > " + dirtrge + "\\SecEvt4625.csv"
             returned_value = os.system(cmdexec)
 
-            cmdexec = "LogParser.exe \"Select to_utctime(Timegenerated) AS Date, EXTRACT_TOKEN(strings, 0, '|') AS ServiceName, EXTRACT_TOKEN(strings, 1, '|') AS ServicePath, EXTRACT_TOKEN(strings, 4, '|') AS ServiceUser FROM System1.evtx WHERE EventID = 7045\" -i:evt -o:csv -q > SysEvt7045.csv"
+            cmdexec = "LogParser.exe \"Select to_utctime(Timegenerated) AS Date, EXTRACT_TOKEN(strings, 0, '|') AS ServiceName, EXTRACT_TOKEN(strings, 1, '|') AS ServicePath, EXTRACT_TOKEN(strings, 4, '|') AS ServiceUser FROM " + dirtrge + "\\System1.evtx WHERE EventID = 7045\" -i:evt -o:csv -q > " + dirtrge + "\\SysEvt7045.csv"
             returned_value = os.system(cmdexec)
 
-            cmdexec = "LogParser.exe \"Select to_utctime(Timegenerated) AS Date, SourceName, EventCategoryName, Message FROM Security1.evtx WHERE EventID = 4698\" -i:evt -o:csv -q > SecEvt4698.csv"
+            cmdexec = "LogParser.exe \"Select to_utctime(Timegenerated) AS Date, SourceName, EventCategoryName, Message FROM " + dirtrge + "\\Security1.evtx WHERE EventID = 4698\" -i:evt -o:csv -q > " + dirtrge + "\\SecEvt4698.csv"
             returned_value = os.system(cmdexec)
         else:
             print("[!] Error Parsing Event Log Entries...")
@@ -753,7 +761,7 @@ def main():
 
         exeName = dirleft + "\\SYS\\RBCmd.exe"
         if os.path.isfile(exeName):
-            cmdexec = dirleft + "\\SYS\\RBCmd.exe --dt \"yyyy-MM-dd HH:mm:ss K\" -d " + dirname + Recycle + " >> RBin.dat" 
+            cmdexec = dirleft + "\\SYS\\RBCmd.exe --dt \"yyyy-MM-dd HH:mm:ss K\" -d " + dirname + Recycle + " >> " + dirtrge + "\\RBin.dat" 
             returned_value = os.system(cmdexec)
         else:
             print("[!] RBCmd Recycle Bin Parser Not Found...")
@@ -773,13 +781,13 @@ def main():
         if os.path.isfile(exeName):
             MFTName = dirname + "\\RawData\\$MFT"
             if os.path.isfile(MFTName):
-                cmdexec = dirleft + "\\DSK\\MFTDump.exe /l /d /v --output=MFTDump.csv " + MFTName 
+                cmdexec = dirleft + "\\DSK\\MFTDump.exe /l /d /v --output=" + dirtrge + "\\MFTDump.csv " + MFTName 
                 returned_value = os.system(cmdexec)
                 MFTFound = 1
 
             MFTName = dirname + MFTFile
             if os.path.isfile(MFTName):
-                cmdexec = dirleft + "\\DSK\\MFTDump.exe /l /d /v --output=MFTDump.csv " + MFTName
+                cmdexec = dirleft + "\\DSK\\MFTDump.exe /l /d /v --output=" + dirtrge + "\\MFTDump.csv " + MFTName
                 returned_value = os.system(cmdexec)
                 MFTFound = 1
 
@@ -798,10 +806,10 @@ def main():
     # Clean Up.                                                               #
     ###########################################################################
     if RunAllAll == 1 or SrcEvtx == 1:
-        os.remove("Security.evtx")
-        os.remove("Security1.evtx")
-        os.remove("System.evtx")
-        os.remove("System1.evtx")
+        os.remove(dirtrge + "\\Security.evtx")
+        os.remove(dirtrge + "\\Security1.evtx")
+        os.remove(dirtrge + "\\System.evtx")
+        os.remove(dirtrge + "\\System1.evtx")
 
 
     ###########################################################################
@@ -940,8 +948,8 @@ def main():
         outfile.write("</label><div><hr>\n")
 
         filname = dirname + "\\info.dat"
-        dedname = "SysInfo.dat"
-        TZname = "TZInfo.dat"
+        dedname = dirtrge + "\\SysInfo.dat"
+        TZname = dirtrge + "\\TZInfo.dat"
 
         if os.path.isfile(filname):
             outfile.write("<p><i><font color=firebrick>In this section, AChoir has parsed standard information about\n")
@@ -985,7 +993,7 @@ def main():
 
             innfile.close()
 
-        elif os.path.isfile(dedname):
+        if os.path.isfile(dedname):
             outfile.write("<p><i><font color=firebrick>In this section, AChoir has parsed standard information about\n")
             outfile.write("the endpoint. This information was extracted from the SYSTEM and SOFTWARE Registry Hives\n")
             outfile.write("using RegRipper.</font></i></p>\n")
@@ -1100,7 +1108,7 @@ def main():
     ###########################################################################
     if (RunAllAll == 1 or RunSmlDel == 1) and SrcMFT == 1:
         print("[+] Generating Small Deleted Files $MFT Information...")
-        filname = "MFTDump.csv"
+        filname = dirtrge + "\\MFTDump.csv"
 
         if os.path.isfile(filname):
             reccount = 0
@@ -1178,7 +1186,7 @@ def main():
     ###########################################################################
     if (RunAllAll == 1 or RunMedDel == 1) and SrcMFT == 1:
         print("[+] Generating Medium Deleted Files $MFT Information...")
-        filname = "MFTDump.csv"
+        filname = dirtrge + "\\MFTDump.csv"
 
         if os.path.isfile(filname):
             reccount = 0
@@ -1255,7 +1263,7 @@ def main():
     ###########################################################################
     if (RunAllAll == 1 or RunLrgDel == 1) and SrcMFT == 1:
         print("[+] Generating Large Deleted Files $MFT Information...")
-        filname = "MFTDump.csv"
+        filname = dirtrge + "\\MFTDump.csv"
 
         if os.path.isfile(filname):
             reccount = 0
@@ -1333,7 +1341,7 @@ def main():
     ###########################################################################
     if (RunAllAll == 1 or RunLrgAct == 1) and SrcMFT == 1:
         print("[+] Generating Large Active Files $MFT Information...")
-        filname = "MFTDump.csv"
+        filname = dirtrge + "\\MFTDump.csv"
 
         if os.path.isfile(filname):
             reccount = 0
@@ -1412,7 +1420,7 @@ def main():
     ###########################################################################
     if (RunAllAll == 1 or RunTmpAct == 1) and SrcMFT == 1:
         print("[+] Generating Active Files in Temp Directories...")
-        filname = "MFTDump.csv"
+        filname = dirtrge + "\\MFTDump.csv"
 
         if os.path.isfile(filname):
             reccount = 0
@@ -1494,7 +1502,7 @@ def main():
     ###########################################################################
     if (RunAllAll == 1 or RunTmpDel == 1) and SrcMFT == 1:
         print("[+] Generating Deleted Files in Temp Directories...")
-        filname = "MFTDump.csv"
+        filname = dirtrge + "\\MFTDump.csv"
 
         if os.path.isfile(filname):
             reccount = 0
@@ -1575,7 +1583,7 @@ def main():
     # Clean Up.                                                               #
     ###########################################################################
     if RunAllAll == 1 or SrcMFT == 1:
-        os.remove("MFTDump.csv")
+        os.remove(dirtrge + "\\MFTDump.csv")
         os.remove("MFTDump.log")
 
 
@@ -1598,7 +1606,7 @@ def main():
         outfile.write("to determine if they look suspicious.<font color=gray size=-1><br><br>Source: Parsed Security Event Log, TZ is UTC</font></font></i></p>\n")
 
         reccount = 0
-        filname = "RDPGood.csv"
+        filname = dirtrge + "\\RDPGood.csv"
 
         if os.path.isfile(filname):
             outfile.write("<table class=\"sortable\" border=1 cellpadding=5 width=100%>\n")
@@ -1686,7 +1694,7 @@ def main():
         outfile.write(" look suspicious.<font color=gray size=-1><br><br>Source: Parsed Security Event Log, TZ is UTC</font></font></i></p>\n")
 
         reccount = 0
-        filname = "SecEvt4625.csv"
+        filname = dirtrge + "\\SecEvt4625.csv"
 
         dedupCol = []
         dedupCnt = []
@@ -2053,7 +2061,7 @@ def main():
         outfile.write("<font color=gray size=-1><br><br>Source: Collected Prefetch files, TZ is UTC.</font></font></i></p>\n")
 
         reccount = 0
-        filname = "WinPrefetchView.csv"
+        filname = dirtrge + "\\WinPrefetchView.csv"
 
         if os.path.isfile(filname):
             outfile.write("<table class=\"sortable\" border=1 cellpadding=5 width=100%>\n")
@@ -2178,8 +2186,6 @@ def main():
         else:
             print("[!] Bypassing PCA Information (No PCA Input Data) ...")
             outfile.write("<p><b><font color = red> No PCA Input Data Found! </font></b></p>\n")
-
-
 
 
 
@@ -2383,7 +2389,7 @@ def main():
         outfile.write("ordinary, or appears to be malicious.<font color=gray size=-1><br><br>Source: AmCache Registry Hive, Dates ending with a Z denote UTC Time Zone</font></font></i></p>\n")
 
         reccount = 0
-        filname = "AmCache.dat"
+        filname = dirtrge + "\\AmCache.dat"
         AmCName = " "
         AmCLast = " "
 
@@ -2539,13 +2545,13 @@ def main():
 
         filcount = 0
 
-        for curfile in os.listdir("."):
+        for curfile in os.listdir(dirtrge):
             if curfile.startswith("shlasst."):
                 # Find the Desktop Directory (That tells us the user)
                 filcount = filcount + 1
                 outfile.write("<table border=1 cellpadding=5 width=100%>\n")
 
-                innfile = open(curfile, encoding='utf8', errors="replace")
+                innfile = open(dirtrge + "\\" + curfile, encoding='utf8', errors="replace")
                 for innline in innfile:
                     if innline.startswith("Desktop "):
                         outfile.write("<tr><th width=100%>" + innline.strip()  + "</th></tr>\n")
@@ -2554,7 +2560,7 @@ def main():
                 outfile.write("<tr><td style=\"text-align: left\">\n")
 
                 reccount = 0 
-                innfile = open(curfile, encoding='utf8', errors="replace")
+                innfile = open(dirtrge + "\\" + curfile, encoding='utf8', errors="replace")
                 for innline in innfile:
                     # Is it in our IOC List?
                     IOCGotHit = 0 
@@ -2580,7 +2586,7 @@ def main():
 
                 innfile.close()
                 outfile.write("</td></tr></table>\n")
-                os.remove(curfile)
+                os.remove(dirtrge + "\\" + curfile)
 
                 if reccount < 2:
                     outfile.write("<p><b><font color = red> No Data Found! </font></b></p>\n")
@@ -2689,32 +2695,36 @@ def main():
 
         print("[+] Checking for Eric Zimmerman LECmd Link Parser...")
 
-        if os.path.isfile(".\\LECmd.exe") == False:
+        if os.path.isfile(".\\Sys\\LECmd.exe") == False:
             print("[?] LECmd executable not found...  Would you like to Download it...")
             YesOrNo = input("[?] Y/N > ")
 
             if YesOrNo.upper() == "Y":
                 print("[+] Downloading LECmd from Eric Zimmerman Web Site...")
+
+                if not os.path.exists('.\\Sys'):
+                    os.makedirs('.\\Sys')
+
                 LECUrl = 'https://f001.backblazeb2.com/file/EricZimmermanTools/LECmd.zip'
                 LECReq = requests.get(LECUrl, allow_redirects=True)
-                open('LECmd.zip', 'wb').write(LECReq.content)
+                open('.\\Sys\\LECmd.zip', 'wb').write(LECReq.content)
 
                 print("[+] Unzipping LECmd...")
-                with ZipFile('LECmd.zip', 'r') as zipObj:
+                with ZipFile('.\\Sys\\LECmd.zip', 'r') as zipObj:
                     # Extract all the contents of zip file in current directory
-                    zipObj.extractall()
+                    zipObj.extractall(path=".\\Sys")
             else:
                 print("[!] LECmd Download Bypassed...")
 
 
-        exeName = ".\\LECmd.exe"
+        exeName = ".\\Sys\\LECmd.exe"
         if os.path.isfile(exeName):
             print("[+] LECmd executable found")
             print("[+] Parsing Desktop and Recent LNK Files from Multiple User Profiles...")
 
             curdir = dirname + LNKFile
             filname = "LNKFiles.csv"
-            cmdexec = exeName + " -q -d " + curdir + " --dt \"yyyy-MM-dd HH:mm:ss K\" --csv .\\ --csvf " + filname 
+            cmdexec = exeName + " -q -d " + curdir + " --dt \"yyyy-MM-dd HH:mm:ss K\" --csv " + dirtrge + " --csvf " + filname 
             returned_value = os.system(cmdexec)
 
             print("[+] Reading Desktop and Recent LNK Files from Multiple User Profiles...")
@@ -2773,7 +2783,7 @@ def main():
                             reccount = reccount + 1
 
                 outfile.write("</tbody></table>\n")
-                os.remove(filname)
+                os.remove(dirtrge + "\\" + filname)
 
                 if reccount < 2:
                     print("[!] No LNK File Data Found...")
@@ -2989,7 +2999,7 @@ def main():
         outfile.write("which may indicate malicious intent.<font color=gray size=-1><br><br>Source: Parsed System Event Log, TZ is UTC</font></font></i></p>\n")
 
         reccount = 0
-        filname = "SysEvt7045.csv"
+        filname = dirtrge + "\\SysEvt7045.csv"
 
         if os.path.isfile(filname):
             outfile.write("<table class=\"sortable\" border=1 cellpadding=5 width=100%>\n")
@@ -3074,7 +3084,7 @@ def main():
         outfile.write("which may indicate malicious intent.<font color=gray size=-1><br><br>Source: Parsed Security Event Log, TZ is UTC</font></font></i></p>\n")
 
         reccount = 0
-        filname = "SecEvt4698.csv"
+        filname = dirtrge + "\\SecEvt4698.csv"
 
         if os.path.isfile(filname):
             outfile.write("<table class=\"sortable\" border=1 cellpadding=5 width=100%>\n")
@@ -3424,7 +3434,7 @@ def main():
         outfile.write("</label><div><hr>\n")
 
         reccount = 0
-        filname = "RBin.dat"
+        filname = dirtrge + "\\RBin.dat"
 
         if os.path.isfile(filname): 
             outfile.write("<p><i><font color=firebrick>In this section, AChoir has parsed the Recycle Bin\n")
@@ -3498,36 +3508,36 @@ def main():
     if (RunAllAll == 1 or RunShlBag == 1):
         print("[+] Checking for Eric Zimmerman SBECmd...")
 
-        if os.path.isfile(".\\SBECmd\\SBECmd.exe") == False:
+        if os.path.isfile(".\\Sys\\SBECmd.exe") == False:
             print("[?] Shell Bags Explorer - SBECmd executable not found...  Would you like to Download it...")
             YesOrNo = input("[?] Y/N > ")
 
             if YesOrNo.upper() == "Y":
                 print("[+] Downloading Eric Zimmerman Shell Bags Explorer...")
 
-                if not os.path.exists('.\\SBECMD'):
-                    os.makedirs('.\\SBECMD')
+                if not os.path.exists('.\\Sys'):
+                    os.makedirs('.\\Sys')
 
                 ShlBUrl = 'https://f001.backblazeb2.com/file/EricZimmermanTools/SBECmd.zip'
                 ShlBReq = requests.get(ShlBUrl, allow_redirects=True)
-                open('.\\SBECmd\\SBECmd.zip', 'wb').write(ShlBReq.content)
+                open('.\\SYs\\SBECmd.zip', 'wb').write(ShlBReq.content)
 
                 print("[+] Unzipping Shell Bags Explorer - SBECmd...")
-                with ZipFile('.\\SBECMD\\SBECmd.zip', 'r') as zipObj:
+                with ZipFile('.\\SYs\\SBECmd.zip', 'r') as zipObj:
                     # Extract all the contents of zip file in current directory
-                    zipObj.extractall(path='.\\SBECmd')
+                    zipObj.extractall(path='.\\Sys')
             else:
                 print("[!] Shell Bags Explorer Download Bypassed...")
 
 
-        if os.path.isfile(".\\SBECmd\\SBECmd.exe"):
+        if os.path.isfile(".\\Sys\\SBECmd.exe"):
             print("[+] Shell Bags Explorer executable found")
             print("[+] Running Shell Bags Explorer against all Collection directories...")
 
             ShlBSubDir = ""
 
             ShlName = dirname + ShelBag
-            cmdexec = ".\\SBECmd\\SBECmd.exe -d " + ShlName + " --csv .\ShellBags --nl --dt \"yyyy-MM-dd HH:mm:ss K\""
+            cmdexec = ".\\Sys\\SBECmd.exe -d " + ShlName + " --csv " + dirtrge + "\\ShellBags --nl --dt \"yyyy-MM-dd HH:mm:ss K\""
             returned_value = os.system(cmdexec)
 
 
@@ -3545,15 +3555,15 @@ def main():
             ###########################################################################
             # Parse all SBECmd csv files                                              #
             ###########################################################################
-            if os.path.isdir(".\\ShellBags"):
-                for SBName in os.listdir(".\ShellBags"):
+            if os.path.isdir(dirtrge + "\\ShellBags"):
+                for SBName in os.listdir(dirtrge + "\\ShellBags"):
 
                     if SBName.endswith(".csv"):
                         outfile.write("<p><i><font color=firebrick>Processing: " + SBName + " </font></i></p>\n")
                         outfile.write("<table class=\"sortable\" border=1 cellpadding=5 width=100%>\n")
 
                         reccount = 0
-                        with open(".\\ShellBags\\" + SBName, 'r', encoding='utf8', errors="replace") as csvfile:
+                        with open(dirtrge + "\\ShellBags\\" + SBName, 'r', encoding='utf8', errors="replace") as csvfile:
                             csvread = csv.reader((line.replace('\0','') for line in csvfile), delimiter=',')
                             for csvrow in csvread:
                                 if len(csvrow) > 3:
@@ -3594,7 +3604,7 @@ def main():
                                     reccount = reccount + 1
 
                         outfile.write("</tbody></table>\n")
-                        os.remove(".\\ShellBags\\" + SBName)
+                        os.remove(dirtrge + "\\ShellBags\\" + SBName)
 
                         if reccount < 2:
                             outfile.write("<p><b><font color = red> No Data Found! </font></b></p>\n")
@@ -3653,7 +3663,7 @@ def main():
             ChSwSubDir = ""
 
             EvtName = dirname + EvtDir1
-            cmdexec = ".\\chainsaw\\chainsaw_x86_64-pc-windows-msvc.exe hunt --skip-errors --timezone UTC --full --csv --output .\\ChainCSV --mapping .\\chainsaw\\mappings\\sigma-event-logs-all.yml --rule .\\chainsaw\\rules --sigma .\\chainsaw\\sigma " + EvtName
+            cmdexec = ".\\chainsaw\\chainsaw_x86_64-pc-windows-msvc.exe hunt --skip-errors --timezone UTC --full --csv --output " + dirtrge + "\\ChainCSV --mapping .\\chainsaw\\mappings\\sigma-event-logs-all.yml --rule .\\chainsaw\\rules --sigma .\\chainsaw\\sigma " + EvtName
             returned_value = os.system(cmdexec)
 
             outfile.write("<a name=ChainSaw></a>\n")
@@ -3672,7 +3682,7 @@ def main():
             ###########################################################################
             # Chainsaw: Log Tampering                                                 #
             ###########################################################################
-            for ChName in glob.glob('.\\**\\log_tampering.csv', recursive=True):
+            for ChName in glob.glob(dirtrge + '\\**\\log_tampering.csv', recursive=True):
                 outfile.write("<table class=\"sortable\" border=1 cellpadding=5 width=100%>\n")
                 outfile.write("<p><i><font color=firebrick>Log Tampering:</font></i></p>\n")
 
@@ -3733,7 +3743,7 @@ def main():
             ###########################################################################
             # Chainsaw: Account Tampering                                             #
             ###########################################################################
-            for ChName in glob.glob('.\\**\\account_tampering.csv', recursive=True):
+            for ChName in glob.glob(dirtrge + '\\**\\account_tampering.csv', recursive=True):
                 outfile.write("<table class=\"sortable\" border=1 cellpadding=5 width=100%>\n")
                 outfile.write("<p><i><font color=firebrick>Account Tampering:</font></i></p>\n")
 
@@ -3795,7 +3805,7 @@ def main():
             ###########################################################################
             # Chainsaw: Login Attacks                                                 #
             ###########################################################################
-            for ChName in glob.glob('.\\**\\login_attacks.csv', recursive=True):
+            for ChName in glob.glob(dirtrge + '\\**\\login_attacks.csv', recursive=True):
                 outfile.write("<table class=\"sortable\" border=1 cellpadding=5 width=100%>\n")
                 outfile.write("<p><i><font color=firebrick>Login Attacks:</font></i></p>\n")
 
@@ -3856,7 +3866,7 @@ def main():
             ###########################################################################
             # Chainsaw: Antivirus Detections                                          #
             ###########################################################################
-            for ChName in glob.glob('.\\**\\antivirus.csv', recursive=True):
+            for ChName in glob.glob(dirtrge + '\\**\\antivirus.csv', recursive=True):
                 outfile.write("<table class=\"sortable\" valign=top border=1 cellpadding=5 width=100%>\n")
                 outfile.write("<p><i><font color=firebrick>Antivirus Detections:</font></i></p>\n")
 
@@ -3921,7 +3931,7 @@ def main():
             ###########################################################################
             # Chainsaw: Lateral Movement                                              #
             ###########################################################################
-            for ChName in glob.glob('.\\**\\lateral_movement.csv', recursive=True):
+            for ChName in glob.glob(dirtrge + '\\**\\lateral_movement.csv', recursive=True):
                 outfile.write("<table class=\"sortable\" valign=top border=1 cellpadding=5 width=100%>\n")
                 outfile.write("<p><i><font color=firebrick>Lateral Movement Detections:</font></i></p>\n")
 
@@ -3983,7 +3993,7 @@ def main():
             ###########################################################################
             # Chainsaw: Sigma Detections                                              #
             ###########################################################################
-            for ChName in glob.glob('.\\**\\sigma.csv', recursive=True):
+            for ChName in glob.glob(dirtrge + '\\**\\sigma.csv', recursive=True):
                 outfile.write("<table class=\"sortable\" border=1 cellpadding=5 width=100%>\n")
                 outfile.write("<p><i><font color=firebrick>Sigma Rule(s) Detections:</font></i></p>\n")
 
