@@ -2724,6 +2724,7 @@ def main():
 
             curdir = dirname + LNKFile
             filname = "LNKFiles.csv"
+            fulname - dirtrge + "\\" + filname
             cmdexec = exeName + " -q -d " + curdir + " --dt \"yyyy-MM-dd HH:mm:ss K\" --csv " + dirtrge + " --csvf " + filname 
             returned_value = os.system(cmdexec)
 
@@ -2731,9 +2732,9 @@ def main():
 
             reccount = 0
 
-            if os.path.isfile(filname):
+            if os.path.isfile(fulname):
                 outfile.write("<table class=\"sortable\" border=1 cellpadding=5 width=100%>\n")
-                with open(filname, 'r', encoding='utf8', errors="replace") as csvfile:
+                with open(fulname, 'r', encoding='utf8', errors="replace") as csvfile:
                     csvread = csv.reader((line.replace('\0','') for line in csvfile), delimiter=',')
                     for csvrow in csvread:
                         if len(csvrow) > 18:
@@ -2783,7 +2784,7 @@ def main():
                             reccount = reccount + 1
 
                 outfile.write("</tbody></table>\n")
-                os.remove(dirtrge + "\\" + filname)
+                os.remove(fulname)
 
                 if reccount < 2:
                     print("[!] No LNK File Data Found...")
