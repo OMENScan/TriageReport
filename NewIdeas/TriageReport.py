@@ -2724,7 +2724,7 @@ def main():
 
             curdir = dirname + LNKFile
             filname = "LNKFiles.csv"
-            fulname - dirtrge + "\\" + filname
+            fulname = dirtrge + "\\" + filname
             cmdexec = exeName + " -q -d " + curdir + " --dt \"yyyy-MM-dd HH:mm:ss K\" --csv " + dirtrge + " --csvf " + filname 
             returned_value = os.system(cmdexec)
 
