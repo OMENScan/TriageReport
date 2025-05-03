@@ -7,6 +7,7 @@
 #   Read parsed CSV Files and convert to Timesketch format            #
 #                                                                     #
 #   v0.01 - Basic Ideas                                               #
+#   v0.02 - Add SRUM                                                  #
 ####################################################################### 
 import os
 import sys
@@ -71,11 +72,11 @@ def main():
     # Fell Through - Look for Config File                                     #
     ###########################################################################
     RunAllAll = 0
-    RunFBrHst = RunPCAsst = RunPrfHst = RunIBrHst = RunAutoRn = RunChnSaw = RunLastAct = RunLnkPrs = 1  # For future use (Turn option on and off)
+    RunFBrHst = RunPCAsst = RunPrfHst = RunIBrHst = RunAutoRn = RunChnSaw = RunLastAct = RunLnkPrs = RunSrum = 1  # For future use (Turn option on and off)
 
     HasIOCs = 0
 
-    SrcMFT = SrcEvtx = SrcPrf = SrcLAct = SrcLnkPrs = 1  # For Future Use
+    SrcMFT = SrcEvtx = SrcPrf = SrcLAct = SrcLnkPrs = SrcSrum = 1  # For Future Use
 
     Collect = "AChoirX"
     MFTFile = "\\RawData\\MFT-C"
@@ -88,6 +89,8 @@ def main():
     AutoRun = "\\Arn\\AutoRun.dat"
     EvtDir1 = "\\Evt\\WINDOWS\\System32\\winevt\\Logs"
     EvtDir2 = "\\WINDOWS\\Native\\winevt\\Logs"
+    SrumDir = "\\Sys\\Sys32\\sru"
+    SysRegs = "\\Reg\\Config"
     PreConv = ""
     Brander = ""
 
@@ -135,6 +138,9 @@ def main():
                 SrcEvtx = 1
                 RunChnSaw = 1
 
+            elif cfgline.startswith("Run:Srum"):
+                RunSrum = 1
+
             elif cfgline.startswith("MFTFile:"):
                 MFTFile = cfgline[8:].strip()
                 print("[+] MFT Source File: " + MFTFile)
@@ -176,6 +182,14 @@ def main():
             elif cfgline.startswith("EvtDir2:"):
                 EvtDir2 = cfgline[8:].strip()
                 print("[+] Event Logs Directory 2 (Alternate): " + EvtDir2)
+
+            elif cfgline.startswith("SrumDir:"):
+                SrumDir = cfgline[8:].strip()
+                print("[+] SRUM Directory: " + SrumDir)
+
+            elif cfgline.startswith("SysRegs:"):
+                SysRegs = cfgline[8:].strip()
+                print("[+] System Registries Directory: " + SysRegs)
 
             elif cfgline.startswith("PreConv:"):
                 PreConv = cfgline[8:].strip()
@@ -241,6 +255,26 @@ def main():
         for ChName in glob.glob(ChSwLeftOvers, recursive=True):
             os.remove(ChName)
         shutil.rmtree(ChSwSubDir)
+
+
+    ###########################################################################
+    # Prep Some files that have requirements                                  #
+    ###########################################################################
+    print("[+] Stabilizing Files...")
+
+    SRUFile = dirname + SrumDir + "\\SRUDB.dat"
+    print("[+] Duplicating SRUM Directory/Files...")
+
+    ###########################################################################
+    # Copy SRUM & SOFTWARE and Remove read only - It makes SrumECmd fail      #
+    ###########################################################################
+    if os.path.isfile(SRUFile):
+        cmdexec = "copy " +  dirname + SrumDir + "\\*.* " + dirname + "\\Cache\\*.*"
+        returned_value = os.system(cmdexec)
+        cmdexec = "copy " +  dirname + SysRegs + "\\SOFTWARE " + dirname + "\\Cache\\*.*"
+        returned_value = os.system(cmdexec)
+        cmdexec = "attrib " +  dirname + "\\Cache\*.* -r"
+        returned_value = os.system(cmdexec)
 
 
     ###########################################################################
@@ -658,6 +692,111 @@ def main():
             print("[!] Bypassing Browser History Transform (No Input Data) ...")
     else:
         print("[!] Bypassing Browser History Transform (No Input Data) ...")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ###########################################################################
+    # Parse SRUM DB                                                           #
+    ###########################################################################
+    if RunAllAll == 1 or SrcSrum == 1:
+        print("[+] Generating SRUM Data...")
+        exeName = dirleft + "\\SYS\\SrumECmd.exe"
+
+        if os.path.isfile(exeName):
+            if os.path.isdir(dirname + SrumDir) and os.path.isfile(dirname + SysRegs + "\\SOFTWARE"):
+                cmdexec = dirleft + "\\SYS\\SrumECmd.exe -d " + dirname + "\\Cache -r " + dirname + "\\Cache\\SOFTWARE --csv " + dirtrge + "\\SRUM"
+                returned_value = os.system(cmdexec)
+
+                ###########################################################################
+                # Transform Just the Network activity for Timesketch                      #
+                ###########################################################################
+                
+                for curfile in os.listdir(dirtrge + "\\SRUM"):
+                    if curfile.endswith("SrumECmd_NetworkUsages_Output.csv"):
+                        reccount = 0
+                        filname = dirtrge + "\\SRUM\\" + curfile
+                        filnout = dirtrge + "\\ts_srumnetusage.csv"
+
+                        csvoutf = open(filnout, "w", encoding='utf8', errors="replace")
+                        with open(filname, 'r', encoding='utf8', errors="replace") as csvfile:
+                            csvread = csv.reader((line.replace('\0','') for line in csvfile), delimiter=',')
+                            for csvrow in csvread:
+                                if len(csvrow) > 15:
+                                    if reccount == 0:
+                                        csvoutf.write("\""
+                                                     + csvrow[0].replace(',',' - ').replace('"','') + "\",\"" + "datetime" + "\",\"" + "message" + "\",\""
+                                                     + csvrow[3].replace(',',' - ').replace('"','') + "\",\"" + csvrow[4].replace(',',' - ').replace('"','') + "\",\""
+                                                     + csvrow[5].replace(',',' - ').replace('"','') + "\",\"" + csvrow[6].replace(',',' - ').replace('"','') + "\",\""
+                                                     + csvrow[7].replace(',',' - ').replace('"','') + "\",\"" + csvrow[8].replace(',',' - ').replace('"','') + "\",\""
+                                                     + csvrow[9].replace(',',' - ').replace('"','') + "\",\"" + csvrow[10].replace(',',' - ').replace('"','') +"\",\""
+                                                     + csvrow[11].replace(',',' - ').replace('"','') +"\",\"" + csvrow[12].replace(',',' - ').replace('"','') + "\",\""
+                                                     + csvrow[13].replace(',',' - ').replace('"','') + "\",\"" + csvrow[14].replace(',',' - ').replace('"','') +"\",\""
+                                                     + csvrow[15].replace(',',' - ').replace('"','') + "\",\"" + csvrow[16].replace(',',' - ').replace('"','') + "\",\""
+                                                     + "timestamp_desc\",\"data_type\"\n")
+                                    else:
+                                        csvoutf.write("\""
+                                                     + csvrow[0].replace(',',' - ').replace('"','') + "\",\"" + csvrow[1].replace(' ', 'T').replace(',',' - ').replace('"','') + "\",\""
+                                                     + csvrow[2].replace(',',' - ').replace('"','') + " - Bytes In: " +  csvrow[10].replace(',',' - ').replace('"','')
+                                                     + " - Bytes Out: " + csvrow[11].replace(',',' - ').replace('"','') + "\",\"" + csvrow[3].replace(',',' - ').replace('"','') + "\",\""
+                                                     + csvrow[4].replace(',',' - ').replace('"','') + "\",\"" + csvrow[5].replace(',',' - ').replace('"','') + "\",\""
+                                                     + csvrow[6].replace(',',' - ').replace('"','') + "\",\"" + csvrow[7].replace(',',' - ').replace('"','') + "\",\""
+                                                     + csvrow[8].replace(',',' - ').replace('"','') + "\",\"" + csvrow[9].replace(',',' - ').replace('"','') + "\",\""
+                                                     + csvrow[10].replace(',',' - ').replace('"','') + "\",\"" + csvrow[11].replace(',',' - ').replace('"','') + "\",\""
+                                                     + csvrow[12].replace(',',' - ').replace('"','') + "\",\"" + csvrow[13].replace(',',' - ').replace('"','') + "\",\""
+                                                     + csvrow[14].replace(',',' - ').replace('"','') + "\",\"" + csvrow[15].replace(',',' - ').replace('"','') + "\",\""
+                                                     + csvrow[16].replace(',',' - ').replace('"','') + "\",\""
+                                                     + "srumnetusage\",\"srum:netusage\"\n")
+
+                                    reccount = reccount + 1
+
+                        csvfile.close()
+                        csvoutf.close()
+
+                        if reccount < 2:
+                            print("[!] No Records Processed: " + dirname)
+                        else:
+                            print("[+] Records Processed: " + str(reccount))
+
+            else:
+                print("[!] SRUM or SYSTEM registry Not Found in the Collection: " + dirname + SrumDir)
+                SrcPrf = 0
+        else:
+            print("[!] SrumECmd Not Found...")
+            SrcPrf = 0
+    else:
+        print("[!] Bypassing SRUM Data ...")
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     ###########################################################################
