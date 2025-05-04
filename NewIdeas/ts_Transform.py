@@ -9,7 +9,7 @@
 #   v0.01 - Basic Ideas                                               #
 #   v0.02 - Add SRUM                                                  #
 ####################################################################### 
-import os
+import os, stat
 import sys
 import csv
 import time 
@@ -269,13 +269,23 @@ def main():
     # Copy SRUM & SOFTWARE and Remove read only - It makes SrumECmd fail      #
     ###########################################################################
     if os.path.isfile(SRUFile):
-        cmdexec = "copy " +  dirname + SrumDir + "\\*.* " + dirname + "\\Cache\\*.*"
-        returned_value = os.system(cmdexec)
-        cmdexec = "copy " +  dirname + SysRegs + "\\SOFTWARE " + dirname + "\\Cache\\*.*"
-        returned_value = os.system(cmdexec)
-        cmdexec = "attrib " +  dirname + "\\Cache\*.* -r"
-        returned_value = os.system(cmdexec)
+        # Old Version used OS Copy
+        # cmdexec = "copy " +  dirname + SrumDir + "\\*.* " + dirname + "\\Cache\\*.*"
+        # returned_value = os.system(cmdexec)
+        # cmdexec = "copy " +  dirname + SysRegs + "\\SOFTWARE " + dirname + "\\Cache\\*.*"
+        # returned_value = os.system(cmdexec)
+        # cmdexec = "attrib " +  dirname + "\\Cache\*.* -r"
+        # returned_value = os.system(cmdexec)
 
+        # New Version used Python shutil
+        srum_files = glob.glob(dirname + SrumDir + "\\*.*")
+        for srumfile in srum_files:
+            shutil.copy(srumfile, dirname + "\\Cache\\")
+        shutil.copy( dirname + SysRegs + "\\SOFTWARE", dirname + "\\Cache\\")
+
+        srum_files = glob.glob(dirname + "\\Cache\\*.*")
+        for srumfile in srum_files:
+            os.chmod(srumfile, stat.S_IWRITE)
 
     ###########################################################################
     # Fell Through, Now Process the files and extract data for report
@@ -977,8 +987,13 @@ def main():
             cmdexec = ".\\hayabusa\\hayabusa-2.15.0-win-x64.exe csv-timeline -w --UTC -d " + EvtName + " -o " + dirtrge + "\\Hayabusa\\ts_Hayabusa.csv -p timesketch-verbose --ISO-8601"
             returned_value = os.system(cmdexec)
 
-            cmdexec = "copy " + dirtrge + "\\Hayabusa\\ts_Hayabusa.csv " + dirtrge + "\\"
-            returned_value = os.system(cmdexec)
+            # Old version uses OS Copy
+            # cmdexec = "copy " + dirtrge + "\\Hayabusa\\ts_Hayabusa.csv " + dirtrge + "\\"
+            # returned_value = os.system(cmdexec)
+
+            # New Version used Python shutil
+            shutil.copy(dirtrge + "\\Hayabusa\\ts_Hayabusa.csv", dirtrge + "\\")
+
         else:
             print("[!] Hayabusa Executable not found!  Bypassing Hayabusa Processing...")
 
