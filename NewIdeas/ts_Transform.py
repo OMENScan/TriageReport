@@ -281,6 +281,7 @@ def main():
         srum_files = glob.glob(dirname + SrumDir + "\\*.*")
         for srumfile in srum_files:
             shutil.copy(srumfile, dirname + "\\Cache\\")
+
         shutil.copy( dirname + SysRegs + "\\SOFTWARE", dirname + "\\Cache\\")
 
         srum_files = glob.glob(dirname + "\\Cache\\*.*")
@@ -704,26 +705,6 @@ def main():
         print("[!] Bypassing Browser History Transform (No Input Data) ...")
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     ###########################################################################
     # Parse SRUM DB                                                           #
     ###########################################################################
@@ -794,19 +775,6 @@ def main():
             SrcPrf = 0
     else:
         print("[!] Bypassing SRUM Data ...")
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     ###########################################################################
